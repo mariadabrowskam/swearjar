@@ -1,4 +1,5 @@
 <script>
+document.addEventListener("DOMContentLoaded", () => {
   const counterEl = document.getElementById("counter");
   const startBtn = document.getElementById("startBtn");
   let count = 0;
@@ -77,13 +78,8 @@
         const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
         console.log("🗣️ Heard:", transcript);
 
-        // Remove spaces and punctuation
         const cleaned = transcript.replace(/[^\w*]/g, "");
-
-        // detect if text contains censored words like "***" or "******"
         const hasStars = /(\*{2,})/g.test(transcript);
-
-        // detect known swears or phonetic ones
         const hasSwear = swears.some((word) => cleaned.includes(word));
 
         if (hasSwear || hasStars) {
@@ -112,4 +108,5 @@
   }
 
   startBtn.addEventListener("click", startRecognition);
+});
 </script>
