@@ -1,0 +1,124 @@
+<script>
+  const counterEl = document.getElementById("counter");
+  const startBtn = document.getElementById("startBtn");
+  let count = 0;
+
+  const sounds = Array.from({ length: 16 }, (_, i) =>
+    `https://raw.githubusercontent.com/mariadabrowskam/swearjar/main/${i + 1}.MP3`
+  );
+
+  // oryginalne + zniekształcone wersje przekleństw
+  const swears = [
+    // ---- English base words ----
+    "fuck", "fucking", "fucker", "fucked", "motherfucker", "motherfuck", "fck", "fak", "fakt", "fuc", "fack", "fackin",
+    "shit", "shitty", "bullshit", "bullsh", "bulszit", "sheet", "shiit", "shiet", "shet", "shyt", "shid",
+    "bitch", "biches", "bish", "beech", "bych", "bycz", "bich", "bicz", "betch", "bitsh", "bichh",
+    "asshole", "ass", "arse", "ashole", "aszol", "ashol", "asholz", "assh", "azzhole", "azhol",
+    "bastard", "bastart", "bastar", "bastad", "basturt", "basterd",
+    "crap", "crappy", "krap", "krab", "crab",
+    "damn", "dammit", "damned", "dam", "demn", "daymn", "damm",
+    "dick", "dik", "d1ck", "deek", "deeck", "dikk", "diek",
+    "cock", "kock", "kok", "coq", "cok", "cawk", "cohk", "kawk",
+    "pussy", "pusy", "pusi", "pusee", "pussee", "pusey", "poosi", "poosy",
+    "slut", "sloot", "slutt", "slet", "slat", "slud",
+    "whore", "hore", "hoar", "hoer", "horr", "hure", "whoar",
+    "cum", "cumming", "cumed", "cumm", "kumm", "come", "kom",
+    "blowjob", "bj", "blow job", "blo job", "blojb", "blowj",
+    "dildo", "dealdo", "dilto", "dildu", "dilldo",
+    "penis", "peen", "peniz", "penus", "peniss", "p3nis",
+    "vagina", "vagin", "vageena", "vag", "vajina", "vaginah",
+    "boobs", "boob", "bobs", "boobz", "boobies", "tits", "titties", "titty", "teets", "tetas",
+    "balls", "ballz", "bollocks", "bolox", "boloks", "bollok", "bollox", "balz",
+    "hell", "hehl", "heel", "hel", "hale",
+    "wanker", "wank", "wankr", "wankah", "wankerz",
+    "jerk", "jerkoff", "jerkin", "jerked", "j3rk",
+    "suck", "sucking", "sucks", "suk", "sux", "sook",
+    "hoe", "ho", "hoee", "hoh", "hoeah",
+    "craphead", "shithead", "fuckhead", "dickhead", "asshat",
+    "twat", "twot", "twatt", "twet", "twotz", "twattz",
+    "prick", "prik", "prikk", "preek", "pr1ck",
+    "nigger", "nigga", "niga", "nikka", "niggah", "nigg",
+    "retard", "retarded", "reetard", "ritard", "retart",
+    "dumbass", "stupidass", "fatass", "lazyass",
+    "cunt", "cnt", "c*nt", "kunt", "kant", "c0nt", "coont",
+    "motherfucking", "goddamn", "goddammit", "dammit", "holyshit",
+    "bullshitting", "dipshit", "jackass", "dumbshit", "pieceofshit",
+
+    // ---- Polish equivalents (for bilingual streams) ----
+    "kurwa", "kurw", "kurła", "kórfa", "kurwica",
+    "pierdol", "pierdziel", "pierdyk", "pierd", "pierdu",
+    "chuj", "huj", "chój", "ćhuj", "chuja", "chuje", "chujnia",
+    "suka", "sucz", "suczka", "psia mać",
+    "pizda", "pizde", "pizdo", "pizd", "pizdeczka",
+    "jeb", "jebac", "jebany", "jebane", "jebac", "jebie", "jebłem", "jebnę",
+    "cipa", "cipka", "cip", "ćipa", "ćipka",
+    "spierdal", "spierdalaj", "spierdzielaj", "zajeb", "zajebisty", "zajebiscie",
+    "skurwysyn", "skurwiel", "skurwiu", "skurwy", "skurwysynu", "skurwysyny"
+  ];
+
+  function playRandomSound() {
+    const randomSound = sounds[Math.floor(Math.random() * sounds.length)];
+    const audio = new Audio(randomSound);
+    audio.volume = 1.0;
+    audio.play().catch((e) => console.warn("🎵 Audio blocked:", e));
+  }
+
+  function popCounter() {
+    counterEl.classList.add("pop");
+    setTimeout(() => counterEl.classList.remove("pop"), 400);
+  }
+
+  async function startRecognition() {
+    startBtn.disabled = true;
+    startBtn.textContent = "🎤 Listening...";
+
+    try {
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert("Speech recognition not supported in this browser 😢");
+        return;
+      }
+
+      const recognition = new SpeechRecognition();
+      recognition.lang = "pl-PL";
+      recognition.continuous = true;
+      recognition.interimResults = false;
+
+      recognition.onstart = () => console.log("🎧 Nasłuchiwanie rozpoczęte!");
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
+        console.log("🗣️ Rozpoznano:", transcript);
+
+        const cleaned = transcript.replace(/[^\w*ąćęłńóśźż]/g, "");
+
+        const hasStars = cleaned.includes("***") || cleaned.includes("****") || cleaned.includes("*****");
+        const hasSwear = swears.some((word) => cleaned.includes(word));
+
+        if (hasSwear || hasStars) {
+          count++;
+          counterEl.textContent = `Swear count: ${count}`;
+          popCounter();
+          playRandomSound();
+          console.log("💥 Wykryto przekleństwo!");
+        }
+      };
+
+      recognition.onerror = (err) => console.warn("⚠️ Błąd rozpoznawania:", err.error);
+      recognition.onend = () => {
+        console.log("🔁 Restart recognition...");
+        recognition.start();
+      };
+
+      recognition.start();
+    } catch (err) {
+      console.error("❌ Brak dostępu do mikrofonu:", err);
+      alert("Nie można uzyskać dostępu do mikrofonu 😢");
+    }
+  }
+
+  startBtn.addEventListener("click", startRecognition);
+</script>
