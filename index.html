@@ -1,112 +1,163 @@
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  const counterEl = document.getElementById("counter");
-  const startBtn = document.getElementById("startBtn");
-  let count = 0;
-
-  // your GitHub audio files
-  const sounds = Array.from({ length: 16 }, (_, i) =>
-    `https://raw.githubusercontent.com/mariadabrowskam/swearjar/main/${i + 1}.MP3`
-  );
-
-  // English swear words + common variants and misspellings
-  const swears = [
-    "fuck", "fck", "fak", "fack", "fakk", "fuc", "fock", "fucking", "fucker", "motherfucker", "mf",
-    "shit", "shiet", "shitty", "sheet", "shiit", "shyt", "shid", "bullshit", "bullsh", "bulszit",
-    "bitch", "bish", "bich", "bichh", "beech", "betch", "bitsh",
-    "asshole", "ashole", "ass", "azz", "arse", "ashol", "azzhole", "assh", "azzhole",
-    "bastard", "bastar", "bastad", "basturt", "basterd",
-    "crap", "krap", "crab",
-    "damn", "dammit", "damnit", "daymn", "damn it",
-    "dick", "dik", "d1ck", "deek", "dikk", "diek",
-    "cock", "kock", "kok", "cok", "coq", "cohk", "kawk",
-    "pussy", "pusy", "pusi", "poosi", "poosy", "pusee", "pusey",
-    "slut", "sloot", "slatt", "slet",
-    "whore", "hore", "hoar", "hoer", "whoar", "horr",
-    "cum", "cumming", "came", "kom", "coom",
-    "blowjob", "bj", "blo job", "blowj", "blojb",
-    "boobs", "boob", "bobs", "boobz", "boobies", "tits", "titties", "titty", "teets",
-    "balls", "ballz", "bollocks", "bolox", "boloks", "bollok", "bollox", "balz",
-    "hell", "hehl", "heel", "hel",
-    "wanker", "wank", "wankr", "wankah", "wankerz",
-    "jerk", "jerkoff", "jerkin", "jerked",
-    "suck", "sucks", "suk", "sux", "sook",
-    "hoe", "ho", "hoee", "hoh", "hoeah",
-    "craphead", "shithead", "fuckhead", "dickhead", "asshat",
-    "twat", "twot", "twatt", "twet",
-    "prick", "prik", "prikk", "preek",
-    "retard", "retarded", "reetard", "ritard", "retart",
-    "dumbass", "stupidass", "fatass", "lazyass",
-    "cunt", "cnt", "kunt", "kant", "c0nt", "coont",
-    "motherfucking", "goddamn", "goddammit", "holyshit",
-    "bullshitting", "dipshit", "jackass", "pieceofshit"
-  ];
-
-  function playRandomSound() {
-    const randomSound = sounds[Math.floor(Math.random() * sounds.length)];
-    const audio = new Audio(randomSound);
-    audio.volume = 1.0;
-    audio.play().catch((e) => console.warn("🎵 Audio blocked:", e));
-  }
-
-  function popCounter() {
-    counterEl.classList.add("pop");
-    setTimeout(() => counterEl.classList.remove("pop"), 400);
-  }
-
-  async function startRecognition() {
-    startBtn.disabled = true;
-    startBtn.textContent = "🎤 Listening...";
-
-    try {
-      await navigator.mediaDevices.getUserMedia({ audio: true });
-
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) {
-        alert("Speech recognition not supported in this browser 😢");
-        return;
-      }
-
-      const recognition = new SpeechRecognition();
-      recognition.lang = "en-US";
-      recognition.continuous = true;
-      recognition.interimResults = false;
-
-      recognition.onstart = () => console.log("🎧 Listening for English swears...");
-
-      recognition.onresult = (event) => {
-        const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
-        console.log("🗣️ Heard:", transcript);
-
-        const cleaned = transcript.replace(/[^\w*]/g, "");
-        const hasStars = /(\*{2,})/g.test(transcript);
-        const hasSwear = swears.some((word) => cleaned.includes(word));
-
-        if (hasSwear || hasStars) {
-          count++;
-          counterEl.textContent = `Swear count: ${count}`;
-          popCounter();
-          playRandomSound();
-          console.log("💥 Swear detected!");
-        }
-      };
-
-      recognition.onerror = (err) => {
-        console.warn("⚠️ Speech error:", err.error);
-      };
-
-      recognition.onend = () => {
-        console.log("🔁 Restarting recognition...");
-        recognition.start();
-      };
-
-      recognition.start();
-    } catch (err) {
-      console.error("❌ Microphone access failed:", err);
-      alert("Cannot access microphone 😢");
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Swear Jar</title>
+  <style>
+    body {
+      background-color: black;
+      color: orange;
+      font-family: 'Arial Black', sans-serif;
+      text-align: center;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      margin: 0;
     }
-  }
+    #counter {
+      font-size: 3em;
+      text-shadow: 0 0 20px orange;
+      transition: transform 0.2s;
+    }
+    .pop {
+      transform: scale(1.2);
+    }
+    button {
+      background-color: orange;
+      color: black;
+      font-weight: bold;
+      border: none;
+      border-radius: 10px;
+      padding: 15px 30px;
+      font-size: 1.2em;
+      cursor: pointer;
+      margin-top: 40px;
+      transition: all 0.2s;
+    }
+    button:hover {
+      background-color: gold;
+      transform: scale(1.1);
+    }
+  </style>
+</head>
+<body>
+  <div id="counter">Swear count: 0</div>
+  <button id="startBtn">🎤 Start Listening</button>
 
-  startBtn.addEventListener("click", startRecognition);
-});
-</script>
+  <script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const counterEl = document.getElementById("counter");
+    const startBtn = document.getElementById("startBtn");
+    let count = 0;
+
+    // your GitHub audio files
+    const sounds = Array.from({ length: 16 }, (_, i) =>
+      `https://raw.githubusercontent.com/mariadabrowskam/swearjar/main/${i + 1}.MP3`
+    );
+
+    // English swear words + common variants and misspellings
+    const swears = [
+      "fuck", "fck", "fak", "fack", "fakk", "fuc", "fock", "fucking", "fucker", "motherfucker", "mf",
+      "shit", "shiet", "shitty", "sheet", "shiit", "shyt", "shid", "bullshit", "bullsh", "bulszit",
+      "bitch", "bish", "bich", "bichh", "beech", "betch", "bitsh",
+      "asshole", "ashole", "ass", "azz", "arse", "ashol", "azzhole", "assh", "azzhole",
+      "bastard", "bastar", "bastad", "basturt", "basterd",
+      "crap", "krap", "crab",
+      "damn", "dammit", "damnit", "daymn", "damn it",
+      "dick", "dik", "d1ck", "deek", "dikk", "diek",
+      "cock", "kock", "kok", "cok", "coq", "cohk", "kawk",
+      "pussy", "pusy", "pusi", "poosi", "poosy", "pusee", "pusey",
+      "slut", "sloot", "slatt", "slet",
+      "whore", "hore", "hoar", "hoer", "whoar", "horr",
+      "cum", "cumming", "came", "kom", "coom",
+      "blowjob", "bj", "blo job", "blowj", "blojb",
+      "boobs", "boob", "bobs", "boobz", "boobies", "tits", "titties", "titty", "teets",
+      "balls", "ballz", "bollocks", "bolox", "boloks", "bollok", "bollox", "balz",
+      "hell", "hehl", "heel", "hel",
+      "wanker", "wank", "wankr", "wankah", "wankerz",
+      "jerk", "jerkoff", "jerkin", "jerked",
+      "suck", "sucks", "suk", "sux", "sook",
+      "hoe", "ho", "hoee", "hoh", "hoeah",
+      "craphead", "shithead", "fuckhead", "dickhead", "asshat",
+      "twat", "twot", "twatt", "twet",
+      "prick", "prik", "prikk", "preek",
+      "retard", "retarded", "reetard", "ritard", "retart",
+      "dumbass", "stupidass", "fatass", "lazyass",
+      "cunt", "cnt", "kunt", "kant", "c0nt", "coont",
+      "motherfucking", "goddamn", "goddammit", "holyshit",
+      "bullshitting", "dipshit", "jackass", "pieceofshit"
+    ];
+
+    function playRandomSound() {
+      const randomSound = sounds[Math.floor(Math.random() * sounds.length)];
+      const audio = new Audio(randomSound);
+      audio.volume = 1.0;
+      audio.play().catch((e) => console.warn("🎵 Audio blocked:", e));
+    }
+
+    function popCounter() {
+      counterEl.classList.add("pop");
+      setTimeout(() => counterEl.classList.remove("pop"), 400);
+    }
+
+    async function startRecognition() {
+      startBtn.disabled = true;
+      startBtn.textContent = "🎤 Listening...";
+
+      try {
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+          alert("Speech recognition not supported in this browser 😢");
+          return;
+        }
+
+        const recognition = new SpeechRecognition();
+        recognition.lang = "en-US";
+        recognition.continuous = true;
+        recognition.interimResults = false;
+
+        recognition.onstart = () => console.log("🎧 Listening for English swears...");
+
+        recognition.onresult = (event) => {
+          const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
+          console.log("🗣️ Heard:", transcript);
+
+          const cleaned = transcript.replace(/[^\w*]/g, "");
+          const hasStars = /(\*{2,})/g.test(transcript);
+          const hasSwear = swears.some((word) => cleaned.includes(word));
+
+          if (hasSwear || hasStars) {
+            count++;
+            counterEl.textContent = `Swear count: ${count}`;
+            popCounter();
+            playRandomSound();
+            console.log("💥 Swear detected!");
+          }
+        };
+
+        recognition.onerror = (err) => {
+          console.warn("⚠️ Speech error:", err.error);
+        };
+
+        recognition.onend = () => {
+          console.log("🔁 Restarting recognition...");
+          recognition.start();
+        };
+
+        recognition.start();
+      } catch (err) {
+        console.error("❌ Microphone access failed:", err);
+        alert("Cannot access microphone 😢");
+      }
+    }
+
+    startBtn.addEventListener("click", startRecognition);
+  });
+  </script>
+</body>
+</html>
