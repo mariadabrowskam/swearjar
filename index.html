@@ -3,21 +3,22 @@
   const startBtn = document.getElementById("startBtn");
   let count = 0;
 
-  // Ścieżki do Twoich plików MP3
+  // your GitHub audio files
   const sounds = Array.from({ length: 16 }, (_, i) =>
     `https://raw.githubusercontent.com/mariadabrowskam/swearjar/main/${i + 1}.MP3`
   );
 
-  // Popular English swears + phonetic/misspell variants
+  // English swear words + common variants and misspellings
   const swears = [
     "fuck", "fck", "fak", "fack", "fakk", "fuc", "fock", "fucking", "fucker", "motherfucker", "mf",
-    "shit", "shiet", "shitty", "sheet", "shiit", "shyt", "shid",
+    "shit", "shiet", "shitty", "sheet", "shiit", "shyt", "shid", "bullshit", "bullsh", "bulszit",
     "bitch", "bish", "bich", "bichh", "beech", "betch", "bitsh",
     "asshole", "ashole", "ass", "azz", "arse", "ashol", "azzhole", "assh", "azzhole",
     "bastard", "bastar", "bastad", "basturt", "basterd",
     "crap", "krap", "crab",
     "damn", "dammit", "damnit", "daymn", "damn it",
-    "dick", "dik", "d1ck", "deek", "dikk", "diek", "cock", "kock", "kok", "cok", "coq",
+    "dick", "dik", "d1ck", "deek", "dikk", "diek",
+    "cock", "kock", "kok", "cok", "coq", "cohk", "kawk",
     "pussy", "pusy", "pusi", "poosi", "poosy", "pusee", "pusey",
     "slut", "sloot", "slatt", "slet",
     "whore", "hore", "hoar", "hoer", "whoar", "horr",
@@ -66,7 +67,7 @@
       }
 
       const recognition = new SpeechRecognition();
-      recognition.lang = "en-US"; // tylko angielski
+      recognition.lang = "en-US";
       recognition.continuous = true;
       recognition.interimResults = false;
 
@@ -76,9 +77,13 @@
         const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
         console.log("🗣️ Heard:", transcript);
 
+        // Remove spaces and punctuation
         const cleaned = transcript.replace(/[^\w*]/g, "");
 
-        const hasStars = cleaned.includes("***") || cleaned.includes("****") || cleaned.includes("*****");
+        // detect if text contains censored words like "***" or "******"
+        const hasStars = /(\*{2,})/g.test(transcript);
+
+        // detect known swears or phonetic ones
         const hasSwear = swears.some((word) => cleaned.includes(word));
 
         if (hasSwear || hasStars) {
@@ -90,7 +95,10 @@
         }
       };
 
-      recognition.onerror = (err) => console.warn("⚠️ Speech error:", err.error);
+      recognition.onerror = (err) => {
+        console.warn("⚠️ Speech error:", err.error);
+      };
+
       recognition.onend = () => {
         console.log("🔁 Restarting recognition...");
         recognition.start();
